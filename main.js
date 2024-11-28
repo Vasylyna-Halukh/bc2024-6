@@ -1,7 +1,7 @@
-const {program} = require('commander');
+const { program } = require('commander');
 const express = require("express");
 const app = express();
-const fs = require('fs').promises; 
+const fs = require('fs').promises;
 const fsSync = require('fs')
 const path = require('path');
 const http = require('http');
@@ -20,29 +20,26 @@ const options = program.opts();
 app.use(express.json());
 app.use(express.text());
 
-const file  = fsSync.readFileSync('./openapi.yaml', 'utf8')
+const file = fsSync.readFileSync('./openapi.yaml', 'utf8')
 const swaggerDocument = YAML.parse(file)
 
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-
-
 app.get('/notes/:noteName', (req, res) => {
   const noteName = req.params.noteName;
-
   const filePath = path.join(options.cache, noteName + ".json");
   fs.readFile(filePath)
-  .then(content=>{
-    let jsonData = JSON.parse(content);
-    res.setHeader("Content-Type", "text/plain");
-    res.writeHead(200);
-    res.end(jsonData.note);
-  })
-  .catch(err=>{
-    console.log('No such note: ' + err);
-    res.writeHead(404);
-    res.end('Note not found');
-  });
+    .then(content => {
+      let jsonData = JSON.parse(content);
+      res.setHeader("Content-Type", "text/plain");
+      res.writeHead(200);
+      res.end(jsonData.note);
+    })
+    .catch(err => {
+      console.log('No such note: ' + err);
+      res.writeHead(404);
+      res.end('Note not found');
+    });
 });
 
 app.put('/notes/:noteName', async (req, res) => {
@@ -58,12 +55,10 @@ app.put('/notes/:noteName', async (req, res) => {
   try {
     await fs.access(filePath);
     console.log('File exists');
-
     await fs.writeFile(filePath, jsonData);
     res.setHeader("Content-Type", "text/plain");
     res.writeHead(200);
     res.end(note);
-
   } catch (err) {
     console.log("Error: " + err.message);
     if (err.code === 'ENOENT') {
@@ -76,20 +71,20 @@ app.put('/notes/:noteName', async (req, res) => {
   }
 });
 
-app.delete('/notes/:noteName', (req, res) =>{
+app.delete('/notes/:noteName', (req, res) => {
   const noteName = req.params.noteName;
   const filePath = path.join(options.cache, noteName + ".json");
   fs.unlink(filePath)
-  .then(()=>{
-    res.setHeader("Content-Type", "text/plain");
-    res.writeHead(200);
-    res.end('Note deleted successfully.');
-  })
-  .catch((err) =>{
-    console.error('No such note: ' + err);
-    res.writeHead(404);
-    res.end('Note not found');
-  });
+    .then(() => {
+      res.setHeader("Content-Type", "text/plain");
+      res.writeHead(200);
+      res.end('Note deleted successfully.');
+    })
+    .catch((err) => {
+      console.error('No such note: ' + err);
+      res.writeHead(404);
+      res.end('Note not found');
+    });
 });
 
 app.get('/notes', async (req, res) => {
@@ -104,7 +99,7 @@ app.get('/notes', async (req, res) => {
       
       try {
         const content = await fs.readFile(filePath, 'utf8');
-        const jsonNote = JSON.parse(content); 
+        const jsonNote = JSON.parse(content);
         jsonData.push({ name: jsonNote.note_name, text: jsonNote.note });
       } catch (err) {
         console.log('Error reading file:', err);
@@ -113,7 +108,6 @@ app.get('/notes', async (req, res) => {
     res.setHeader("Content-Type", "application/json");
     res.writeHead(200);
     res.end(JSON.stringify(jsonData));
-
   } catch (err) {
     console.error('Error reading directory:', err);
     res.writeHead(404);
@@ -121,10 +115,9 @@ app.get('/notes', async (req, res) => {
   }
 });
 
-const storage = multer.memoryStorage();  
-const upload = multer({ storage: storage }); 
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
-//upload.none() - for text-only multipart form
 app.post("/write", upload.none(), async (req, res) => {
   const noteName = req.body.note_name;
   const note = req.body.note;
@@ -139,8 +132,7 @@ app.post("/write", upload.none(), async (req, res) => {
     await fs.access(filePath);
     res.writeHead(400);
     return res.end('Нотатка з таким ім’ям вже існує.');
-    } 
-  catch (err) {
+  } catch (err) {
     if (err.code === 'ENOENT') {
       await fs.writeFile(filePath, jsonData);
       res.writeHead(201);
@@ -155,7 +147,6 @@ app.get('/UploadForm.html', (req, res) => {
   res.setHeader('Content-Type', 'text/html');
   res.sendFile('/usr/src/app/UploadForm.html');
 });
-
 
 const server = http.createServer(app);
 
